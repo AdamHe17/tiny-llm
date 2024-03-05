@@ -1,6 +1,6 @@
-# Project Title
+# tiny-llm
 
-Simple overview of use/purpose.
+GPT 3.5 generated code diffs.
 
 ## Description
 
