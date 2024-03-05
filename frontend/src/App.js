@@ -1,4 +1,3 @@
-import logo from "./logo.svg";
 import "./App.css";
 import { useState } from "react";
 
@@ -7,42 +6,39 @@ function App() {
 		"https://github.com/AdamHe17/tiny-llm/blob/main/test.py"
 	);
 	const [prompt, setPrompt] = useState("Add a method to add two integers");
-
 	const [responses, setResponses] = useState([]);
+	const postPath =
+		(process.env.REACT_APP_API_URL || "http://localhost:8000/") + "prompt";
 
-	const generateOutput = async (e) => {
-		e.preventDefault();
-		console.log(`submitted prompt, url=${url} and prompt=${prompt}`);
-		const resp = await fetch("https://tiny-llm.onrender.com/prompt", {
+	const postAndSetResponse = async (promptBody) => {
+		const resp = await fetch(postPath, {
 			method: "Post",
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({
-				repoUrl: url,
-				prompt: prompt,
-			}),
+			body: JSON.stringify(promptBody),
 		});
 		const content = await resp.json();
-		setResponses([content.content]);
+		setResponses([...responses, content.content]);
+	};
+
+	const generateOutput = async (e) => {
+		e.preventDefault();
+		console.log(`submitted prompt, url=${url} and prompt=${prompt}`);
+		postAndSetResponse({
+			repoUrl: url,
+			prompt: prompt,
+		});
 	};
 
 	const regenerate = async (e) => {
 		e.preventDefault();
 		console.log(`regenerating output, url=${url} and prompt=${prompt}`);
-		const resp = await fetch("https://tiny-llm.onrender.com/prompt", {
-			method: "Post",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				repoUrl: url,
-				prompt: prompt,
-				oldResponse: responses,
-			}),
+		postAndSetResponse({
+			repoUrl: url,
+			prompt: prompt,
+			oldResponses: responses,
 		});
-		const content = await resp.json();
-		setResponses([...responses, content.content]);
 	};
 
 	return (
@@ -90,7 +86,7 @@ function App() {
 
 			<ul className="code-list">
 				{responses.map((response, index) => (
-					<li>
+					<li key={`response-${index}`}>
 						<h2>Version {index}</h2>
 						<code>{response}</code>
 					</li>
