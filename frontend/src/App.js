@@ -13,7 +13,7 @@ function App() {
 	const generateOutput = async (e) => {
 		e.preventDefault();
 		console.log(`submitted prompt, url=${url} and prompt=${prompt}`);
-		const resp = await fetch("http://localhost:8000/prompt", {
+		const resp = await fetch("https://tiny-llm.onrender.com/prompt", {
 			method: "Post",
 			headers: {
 				"Content-Type": "application/json",
@@ -30,7 +30,7 @@ function App() {
 	const regenerate = async (e) => {
 		e.preventDefault();
 		console.log(`regenerating output, url=${url} and prompt=${prompt}`);
-		const resp = await fetch("http://localhost:8000/prompt", {
+		const resp = await fetch("https://tiny-llm.onrender.com/prompt", {
 			method: "Post",
 			headers: {
 				"Content-Type": "application/json",

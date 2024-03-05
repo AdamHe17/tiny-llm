@@ -60,7 +60,6 @@ def get_diff(request: Prompt):
 
 
 def _parse_file_from_raw(url: str):
-    "https://github.com/AdamHe17/tiny-llm/blob/main/test.py"
     raw_url = url.replace("github.com", "raw.githubusercontent.com").replace(
         "/blob/", "/"
     )
