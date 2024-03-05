@@ -1,58 +1,68 @@
-from typing import Union
-
 from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
+import requests
+from pydantic import BaseModel
+from typing import Optional
+
 
 app = FastAPI()
+origins = ["http://localhost:3000", "localhost:3000"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-client = OpenAI()
-
-
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
-
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+OPENAI_CLIENT = OpenAI()
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
-
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+class Prompt(BaseModel):
+    repoUrl: str
+    prompt: str
+    oldResponse: Optional[list[str]] = None
 
 
 @app.post("/prompt")
-def get_diff(repoUrl: str, prompt: str):
+def get_diff(request: Prompt):
+    print(request)
+    file_text = _parse_file_from_raw(request.repoUrl)
 
-    # Run reflection
+    gpt_prompt = ""
+    if not request.oldResponse:
+        gpt_prompt = f"Generate a new code diff, the prompt is {request.prompt}. Apply the given prompt to:\n{file_text}"
+    else:
+        old_responses = "\n\n".join(request.oldResponse)
+        gpt_prompt = (
+            f"Generate a new code diff, the prompt is still {request.prompt}."
+            f"Apply the given prompt to: \n{file_text}.\nThe new response must be different from all previous responses: {old_responses}"
+        )
 
-    return {"diff": ""}
+    print(gpt_prompt)
 
-
-@app.get("/prompt")
-def get_prompt():
-    completion = client.chat.completions.create(
+    completion = OPENAI_CLIENT.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
-                "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair.",
+                "content": (
+                    "You are a code diff generator, outputs must only be in unified code diff format, no other formats are allowed."
+                ),
             },
-            {
-                "role": "user",
-                "content": "Compose a poem that explains the concept of recursion in programming.",
-            },
+            {"role": "user", "content": gpt_prompt},
         ],
+        temperature=1,
     )
 
-    print(completion.choices[0].message)
-    return {"prompt": completion.choices[0].message or "Not yet implemented"}
+    return completion.choices[0].message
+
+
+def _parse_file_from_raw(url: str):
+    "https://github.com/AdamHe17/tiny-llm/blob/main/test.py"
+    raw_url = url.replace("github.com", "raw.githubusercontent.com").replace(
+        "/blob/", "/"
+    )
+    r = requests.get(raw_url)
+    return r.text
