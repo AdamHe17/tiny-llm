@@ -7,7 +7,12 @@ from typing import Optional
 
 
 app = FastAPI()
-origins = ["http://localhost:3000", "localhost:3000"]
+origins = [
+    "http://localhost:3000",
+    "localhost:3000",
+    "https://tiny-llm-fe.onrender.com",
+    "tiny-llm-fe.onrender.com",
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
